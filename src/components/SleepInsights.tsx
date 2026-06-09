@@ -12,22 +12,29 @@ interface Props {
 export default function SleepInsights({ logs }: Props) {
   const [insights, setInsights] = useState<string>('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string>('');
 
   const fetchInsights = async () => {
     if (logs.length === 0) return;
     setLoading(true);
+    setError('');
     try {
+      console.log("Fetching insights for", logs.length, "logs");
       const result = await getSleepInsights(logs);
+      console.log("Got result:", result);
       setInsights(result);
     } catch (err) {
-      console.error(err);
+      console.error("AI Insights error:", err);
+      const errorMessage = err instanceof Error ? err.message : "Unknown error";
+      setError(`Failed to load insights: ${errorMessage}`);
+      setInsights(`⚠️ Could not generate insights at this time. Please try again later.`);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (logs.length > 0 && !insights) {
+    if (logs.length > 0 && !insights && !error) {
       fetchInsights();
     }
   }, [logs]);

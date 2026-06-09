@@ -2,10 +2,24 @@ import { GoogleGenAI } from "@google/genai";
 import { SleepLog } from "../types";
 import { format } from "date-fns";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+// Check if API key exists
+const apiKey = process.env.GEMINI_API_KEY;
+if (!apiKey) {
+  console.error("GEMINI_API_KEY is not defined in environment variables");
+}
+
+const ai = new GoogleGenAI({ apiKey: apiKey || "" });
 
 export async function getSleepInsights(logs: SleepLog[]) {
   if (logs.length === 0) return "No sleep logs yet. Start tracking to get insights!";
+
+  // Check API key
+  if (!apiKey) {
+    console.error("GEMINI_API_KEY is missing!");
+    return "⚠️ API key not configured. Please check your environment variables.";
+  }
+
+  console.log("Generating insights for", logs.length, "logs");
 
   const logSummary = logs.slice(0, 7).map(log => {
     const start = log.startTime.toDate();
@@ -29,13 +43,18 @@ export async function getSleepInsights(logs: SleepLog[]) {
   `;
 
   try {
+    console.log("Calling Gemini API with model: gemini-1.5-flash");
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-1.5-flash",
       contents: prompt,
     });
-    return response.text;
+    console.log("Gemini response received successfully");
+    return response.text || "No insights generated.";
   } catch (error) {
     console.error("Gemini Error:", error);
+    if (error instanceof Error) {
+      return `⚠️ Could not generate insights: ${error.message}`;
+    }
     return "Could not generate insights at this time. Please try again later.";
   }
 }

@@ -27,7 +27,7 @@ export default function Auth() {
         <div className="w-20 h-20 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-2xl flex items-center justify-center mb-8 mx-auto shadow-2xl shadow-indigo-500/20">
           <Moon className="w-10 h-10 text-white" />
         </div>
-        <h1 className="text-6xl font-bold mb-6 tracking-tight">Somnus</h1>
+        <h1 className="text-6xl font-bold mb-6 tracking-tight">SleepWell</h1>
         <p className="text-slate-400 max-w-md mx-auto text-lg font-light leading-relaxed">
           The ultimate sleep companion. Track your cycles, optimize your rest.
         </p>

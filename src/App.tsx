@@ -65,7 +65,7 @@ export default function App() {
           <div className="w-8 h-8 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-lg flex items-center justify-center">
             <div className="w-4 h-4 bg-white rounded-full opacity-80" />
           </div>
-          <span className="text-xl font-bold tracking-tight">Somnus</span>
+          <span className="text-xl font-bold tracking-tight">SleepWell</span>
         </div>
         
         <div className="flex items-center gap-4 text-slate-400">

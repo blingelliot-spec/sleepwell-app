@@ -57,3 +57,68 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 1.5rem; /* rounded-3xl */
 }
+
+/* Mobile Responsive Fixes */
+@media (max-width: 768px) {
+  /* Fix main container padding */
+  main {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+  
+  /* Fix navbar */
+  nav {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+  
+  /* Fix hero text */
+  .text-4xl {
+    font-size: 1.75rem !important;
+  }
+  
+  /* Fix glass cards */
+  .glass-card {
+    padding: 1rem !important;
+  }
+  
+  /* Fix sleep log list items */
+  .glass-card .flex.md\:flex-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+  }
+  
+  /* Fix the sidebar stats */
+  .grid-cols-12 {
+    gap: 1rem !important;
+  }
+  
+  /* Fix the + button position */
+  .fixed.bottom-8.right-8 {
+    bottom: 1rem !important;
+    right: 1rem !important;
+    width: 3.5rem !important;
+    height: 3.5rem !important;
+  }
+  
+  /* Fix Smart Alarm card */
+  .bg-gradient-to-br {
+    padding: 1rem !important;
+  }
+  
+  /* Fix quality stars in form */
+  .flex.justify-between.gap-2 button {
+    padding: 0.5rem !important;
+  }
+}
+
+/* Fix for very small screens (phones) */
+@media (max-width: 480px) {
+  .text-xl {
+    font-size: 1rem !important;
+  }
+  
+  .gap-8 {
+    gap: 1rem !important;
+  }
+}

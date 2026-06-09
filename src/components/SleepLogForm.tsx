@@ -16,11 +16,21 @@ export default function SleepLogForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validation: Check if end time is after start time
+    const start = new Date(startTime);
+    const end = new Date(endTime);
+    
+    if (end <= start) {
+      alert("Waking time must be after bedtime. Please check your times.");
+      return;
+    }
+    
     setLoading(true);
     try {
       await sleepService.logSleep({
-        startTime: Timestamp.fromDate(new Date(startTime)),
-        endTime: Timestamp.fromDate(new Date(endTime)),
+        startTime: Timestamp.fromDate(start),
+        endTime: Timestamp.fromDate(end),
         quality,
         notes,
         mood
@@ -29,6 +39,7 @@ export default function SleepLogForm() {
       resetForm();
     } catch (err) {
       console.error(err);
+      alert("Failed to save sleep log. Please try again.");
     } finally {
       setLoading(false);
     }

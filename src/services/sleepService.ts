@@ -9,6 +9,7 @@ import {
   orderBy, 
   limit, 
   addDoc, 
+  deleteDoc,
   serverTimestamp,
   onSnapshot
 } from 'firebase/firestore';
@@ -108,5 +109,15 @@ export const sleepService = {
     }, (error) => {
       handleFirestoreError(error, OperationType.GET, path);
     });
-  }
+  },
+
+  async deleteLog(logId: string) {
+    if (!auth.currentUser) throw new Error('User not authenticated');
+    const path = `users/${auth.currentUser.uid}/sleepLogs/${logId}`;
+    try {
+      await deleteDoc(doc(db, path));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, path);
+    }
+  },
 };

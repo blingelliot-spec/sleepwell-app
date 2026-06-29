@@ -114,39 +114,43 @@ export default function SmartAlarm() {
   };
 
   return (
-    <div className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-3xl p-6 shadow-xl shadow-indigo-900/20">
-      <div className="flex justify-between items-center mb-4">
+    <div className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-3xl p-4 sm:p-6 shadow-xl shadow-indigo-900/20">
+      <div className="flex justify-between items-center mb-3 sm:mb-4">
         <span className="text-sm font-medium flex items-center gap-2">
           <Bell className="w-4 h-4" /> Smart Alarm
         </span>
         <button
           onClick={toggleAlarm}
-          className={`text-[10px] px-3 py-1 rounded-full transition-colors ${
+          className={`text-[10px] px-2 sm:px-3 py-1 rounded-full transition-colors ${
             isOn ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
           }`}
         >
           {isOn ? 'ON' : 'OFF'}
         </button>
       </div>
-      <div className="flex items-center gap-3 mb-2">
-        <Clock className="w-5 h-5 opacity-70" />
-        <input
-          type="time"
-          value={alarmTime}
-          onChange={handleTimeChange}
-          disabled={!isOn}
-          className="text-4xl font-light bg-transparent border-none outline-none w-40 disabled:opacity-50"
-        />
+
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 mb-2">
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <Clock className="w-5 h-5 opacity-70 flex-shrink-0" />
+          <input
+            type="time"
+            value={alarmTime}
+            onChange={handleTimeChange}
+            disabled={!isOn}
+            className="text-2xl sm:text-4xl font-light bg-transparent border-none outline-none w-full sm:w-40 disabled:opacity-50"
+          />
+        </div>
         {isRinging && (
           <button
             onClick={stopRinging}
-            className="ml-auto text-xs bg-white/20 px-3 py-1 rounded-full hover:bg-white/30 transition-colors flex items-center gap-1"
+            className="w-full sm:w-auto text-xs bg-white/20 px-3 py-1.5 sm:py-1 rounded-full hover:bg-white/30 transition-colors flex items-center justify-center gap-1"
           >
             <VolumeX className="w-3 h-3" /> Stop
           </button>
         )}
       </div>
-      <div className="flex justify-between items-center">
+
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-1 sm:gap-0">
         <div className="text-[10px] opacity-70 uppercase tracking-wider">
           {isOn ? `Alarm set for ${alarmTime}` : 'Alarm disabled'}
         </div>

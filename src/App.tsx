@@ -1,3 +1,4 @@
+import SmartAlarm from './components/SmartAlarm';
 import React, { useEffect, useState } from 'react';
 import { auth } from './lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
@@ -179,14 +180,8 @@ export default function App() {
               </div>
             </motion.div>
 
-            <div className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-3xl p-6 shadow-xl shadow-indigo-900/20">
-              <div className="flex justify-between items-center mb-4">
-                <span className="text-sm font-medium">Smart Alarm</span>
-                <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full">ON</span>
-              </div>
-              <div className="text-4xl font-light mb-1">07:30 <span className="text-xl opacity-80 uppercase">AM</span></div>
-              <div className="text-[10px] opacity-70 uppercase tracking-wider">Waking window: 07:15 - 07:45</div>
-            </div>
+            {/* Smart Alarm - Updated */}
+            <SmartAlarm />
           </aside>
         </div>
       </main>

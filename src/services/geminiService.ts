@@ -2,10 +2,11 @@ import { GoogleGenAI } from "@google/genai";
 import { SleepLog } from "../types";
 import { format } from "date-fns";
 
-// Check if API key exists
-const apiKey = process.env.GEMINI_API_KEY;
+// Vite exposes env variables via import.meta.env, not process.env
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+
 if (!apiKey) {
-  console.error("GEMINI_API_KEY is not defined in environment variables");
+  console.error("VITE_GEMINI_API_KEY is not defined in environment variables");
 }
 
 const ai = new GoogleGenAI({ apiKey: apiKey || "" });
@@ -13,9 +14,8 @@ const ai = new GoogleGenAI({ apiKey: apiKey || "" });
 export async function getSleepInsights(logs: SleepLog[]) {
   if (logs.length === 0) return "No sleep logs yet. Start tracking to get insights!";
 
-  // Check API key
   if (!apiKey) {
-    console.error("GEMINI_API_KEY is missing!");
+    console.error("VITE_GEMINI_API_KEY is missing!");
     return "⚠️ API key not configured. Please check your environment variables.";
   }
 
@@ -43,9 +43,9 @@ export async function getSleepInsights(logs: SleepLog[]) {
   `;
 
   try {
-    console.log("Calling Gemini API with model: gemini-1.5-flash");
+    console.log("Calling Gemini API with model: gemini-3.5-flash");
     const response = await ai.models.generateContent({
-      model: "gemini-1.5-flash",
+      model: "gemini-3.5-flash",
       contents: prompt,
     });
     console.log("Gemini response received successfully");
@@ -56,5 +56,15 @@ export async function getSleepInsights(logs: SleepLog[]) {
       return `⚠️ Could not generate insights: ${error.message}`;
     }
     return "Could not generate insights at this time. Please try again later.";
+  }
+}
+
+export async function listAvailableModels() {
+  try {
+    const response = await ai.models.list();
+    console.log("Available models:", response);
+    return response;
+  } catch (error) {
+    console.error("Error listing models:", error);
   }
 }

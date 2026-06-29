@@ -1,3 +1,4 @@
+import QuickStartSleep from './components/QuickStartSleep';
 import SmartAlarm from './components/SmartAlarm';
 import React, { useEffect, useState } from 'react';
 import { auth } from './lib/firebase';
@@ -12,10 +13,24 @@ import { sleepService } from './services/sleepService';
 import { Moon, LogOut, LayoutDashboard, History, Settings } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
+// ===== DYNAMIC GREETING FUNCTION =====
+function getGreeting() {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 12) return '🌅 Good morning';
+  if (hour >= 12 && hour < 17) return '☀️ Good afternoon';
+  if (hour >= 17 && hour < 21) return '🌇 Good evening';
+  return '🌙 Good night';
+}
+// =====================================
+
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [logs, setLogs] = useState<SleepLog[]>([]);
+  const [quickStartTimes, setQuickStartTimes] = useState<{ start: Date | null; end: Date | null }>({
+    start: null,
+    end: null
+  });
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -35,6 +50,17 @@ export default function App() {
       setLogs([]);
     }
   }, [user]);
+
+  // Quick Start Sleep handlers
+  const handleStartSleep = (startTime: Date) => {
+    console.log('💤 Sleep started at:', startTime);
+  };
+
+  const handleEndSleep = (startTime: Date, endTime: Date) => {
+    console.log('🌅 Sleep ended at:', endTime);
+    console.log('💤 Started at:', startTime);
+    setQuickStartTimes({ start: startTime, end: endTime });
+  };
 
   if (loading) {
     return (
@@ -91,7 +117,7 @@ export default function App() {
             animate={{ opacity: 1, y: 0 }}
             className="text-4xl md:text-6xl font-bold mb-4 tracking-tight"
           >
-            Good morning, {user.displayName?.split(' ')[0]}
+            {getGreeting()}, {user.displayName?.split(' ')[0]}
           </motion.h1>
           <motion.p 
             initial={{ opacity: 0, y: 10 }}
@@ -147,6 +173,9 @@ export default function App() {
               <SleepInsights logs={logs} />
             </motion.div>
 
+            {/* Quick Start Sleep */}
+            <QuickStartSleep onStartSleep={handleStartSleep} onEndSleep={handleEndSleep} />
+
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -180,13 +209,17 @@ export default function App() {
               </div>
             </motion.div>
 
-            {/* Smart Alarm - Updated */}
+            {/* Smart Alarm */}
             <SmartAlarm />
           </aside>
         </div>
       </main>
 
-      <SleepLogForm />
+      <SleepLogForm 
+        initialStartTime={quickStartTimes.start}
+        initialEndTime={quickStartTimes.end}
+        onClose={() => setQuickStartTimes({ start: null, end: null })}
+      />
     </div>
   );
 }

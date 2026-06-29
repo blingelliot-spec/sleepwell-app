@@ -1,23 +1,46 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { sleepService } from '../services/sleepService';
 import { motion, AnimatePresence } from 'motion/react';
 import { Plus, X, Star, Clock, Calendar, Check } from 'lucide-react';
 import { format } from 'date-fns';
 import { Timestamp } from 'firebase/firestore';
 
-export default function SleepLogForm() {
+interface SleepLogFormProps {
+  initialStartTime?: Date | null;
+  initialEndTime?: Date | null;
+  onClose?: () => void;
+}
+
+export default function SleepLogForm({ initialStartTime, initialEndTime, onClose }: SleepLogFormProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [startTime, setStartTime] = useState(format(new Date(), "yyyy-MM-dd'T'22:00"));
-  const [endTime, setEndTime] = useState(format(new Date(), "yyyy-MM-dd'T'07:00"));
+  const [startTime, setStartTime] = useState(
+    format(new Date(), "yyyy-MM-dd'T'22:00")
+  );
+  const [endTime, setEndTime] = useState(
+    format(new Date(), "yyyy-MM-dd'T'07:00")
+  );
   const [quality, setQuality] = useState(3);
   const [notes, setNotes] = useState('');
   const [mood, setMood] = useState('Neutral');
   const [loading, setLoading] = useState(false);
+  const [hasAutoOpened, setHasAutoOpened] = useState(false);
+
+  // Update times and open form when props change
+  useEffect(() => {
+    if (initialStartTime && initialEndTime) {
+      const startStr = format(initialStartTime, "yyyy-MM-dd'T'HH:mm");
+      const endStr = format(initialEndTime, "yyyy-MM-dd'T'HH:mm");
+      console.log('📥 Setting times from props:', { startStr, endStr });
+      setStartTime(startStr);
+      setEndTime(endStr);
+      setIsOpen(true);
+      setHasAutoOpened(true);
+    }
+  }, [initialStartTime, initialEndTime]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validation: Check if end time is after start time
     const start = new Date(startTime);
     const end = new Date(endTime);
     
@@ -37,6 +60,7 @@ export default function SleepLogForm() {
       });
       setIsOpen(false);
       resetForm();
+      if (onClose) onClose();
     } catch (err) {
       console.error(err);
       alert("Failed to save sleep log. Please try again.");
@@ -49,6 +73,17 @@ export default function SleepLogForm() {
     setNotes('');
     setMood('Neutral');
     setQuality(3);
+    setHasAutoOpened(false);
+  };
+
+  const handleOpen = () => {
+    setIsOpen(true);
+  };
+
+  const handleClose = () => {
+    setIsOpen(false);
+    setHasAutoOpened(false);
+    if (onClose) onClose();
   };
 
   return (
@@ -56,7 +91,7 @@ export default function SleepLogForm() {
       <motion.button
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
-        onClick={() => setIsOpen(true)}
+        onClick={handleOpen}
         className="fixed bottom-8 right-8 w-16 h-16 bg-indigo-600 rounded-full flex items-center justify-center shadow-lg shadow-indigo-900/50 z-50 transition-colors hover:bg-indigo-500"
       >
         <Plus className="w-8 h-8" />
@@ -69,7 +104,7 @@ export default function SleepLogForm() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setIsOpen(false)}
+              onClick={handleClose}
               className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             />
             
@@ -80,13 +115,15 @@ export default function SleepLogForm() {
               className="glass-card w-full max-w-md p-8 relative overflow-hidden backdrop-blur-xl border-white/10"
             >
               <button 
-                onClick={() => setIsOpen(false)}
+                onClick={handleClose}
                 className="absolute top-4 right-4 text-zinc-400 hover:text-white"
               >
                 <X className="w-6 h-6" />
               </button>
 
-              <h2 className="text-2xl font-bold mb-6 tracking-tight">Log Sleep</h2>
+              <h2 className="text-2xl font-bold mb-6 tracking-tight">
+                {initialStartTime && initialEndTime ? '🌅 Log Your Sleep' : 'Log Sleep'}
+              </h2>
 
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-2">

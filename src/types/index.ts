@@ -7,6 +7,9 @@ export interface SleepLog {
   mood?: string;
   notes?: string;
   createdAt: any;
+  interrupted?: boolean;  // NEW
+  interruptionReason?: string;  // NEW
+  interruptionNotes?: string;  // NEW
 }
 
 export interface UserProfile {
@@ -14,4 +17,8 @@ export interface UserProfile {
   email: string;
   displayName: string | null;
   photoURL: string | null;
+}
+
+export interface UserSettings {
+  bedtimeGoal: string; // Store as "22:30" format
 }

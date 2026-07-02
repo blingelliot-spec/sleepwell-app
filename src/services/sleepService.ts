@@ -14,7 +14,7 @@ import {
   onSnapshot
 } from 'firebase/firestore';
 import { db, auth } from '../lib/firebase';
-import { SleepLog } from '../types';
+import { SleepLog, UserSettings } from '../types';
 
 enum OperationType {
   CREATE = 'create',
@@ -118,6 +118,32 @@ export const sleepService = {
       await deleteDoc(doc(db, path));
     } catch (error) {
       handleFirestoreError(error, OperationType.DELETE, path);
+    }
+  },
+
+  // Save bedtime goal to Firestore
+  async saveBedtimeGoal(goal: string) {
+    if (!auth.currentUser) throw new Error('User not authenticated');
+    const path = `users/${auth.currentUser.uid}`;
+    try {
+      await setDoc(doc(db, path), { bedtimeGoal: goal }, { merge: true });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, path);
+    }
+  },
+
+  // Load bedtime goal from Firestore
+  async getBedtimeGoal(): Promise<string | null> {
+    if (!auth.currentUser) throw new Error('User not authenticated');
+    const path = `users/${auth.currentUser.uid}`;
+    try {
+      const docSnap = await getDoc(doc(db, path));
+      if (docSnap.exists() && docSnap.data().bedtimeGoal) {
+        return docSnap.data().bedtimeGoal;
+      }
+      return null;
+    } catch (error) {
+      handleFirestoreError(error, OperationType.GET, path);
     }
   },
 };

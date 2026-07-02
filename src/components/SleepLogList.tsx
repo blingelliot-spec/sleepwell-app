@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { SleepLog } from '../types';
 import { format } from 'date-fns';
-import { Star, Clock, Trash2, AlertCircle } from 'lucide-react';
+import { Star, Clock, Trash2, AlertCircle, ChevronDown } from 'lucide-react';
 import { motion } from 'motion/react';
 import { sleepService } from '../services/sleepService';
 
@@ -11,6 +11,7 @@ interface Props {
 
 export default function SleepLogList({ logs }: Props) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [visibleCount, setVisibleCount] = useState(10);
 
   const handleDelete = async (logId: string) => {
     if (confirm('Are you sure you want to delete this sleep log? This cannot be undone.')) {
@@ -26,6 +27,13 @@ export default function SleepLogList({ logs }: Props) {
     }
   };
 
+  const loadMore = () => {
+    setVisibleCount(prev => prev + 10);
+  };
+
+  const visibleLogs = logs.slice(0, visibleCount);
+  const hasMore = visibleCount < logs.length;
+
   if (logs.length === 0) return (
     <div className="text-center py-20 text-zinc-500 font-light">
       No sleep logs recorded yet. Create your first one!
@@ -34,12 +42,15 @@ export default function SleepLogList({ logs }: Props) {
 
   return (
     <div className="space-y-4">
-      {logs.map((log) => {
+      <div className="flex justify-between items-center text-xs text-slate-500">
+        <span>Showing {Math.min(visibleCount, logs.length)} of {logs.length} logs</span>
+      </div>
+
+      {visibleLogs.map((log) => {
         const start = log.startTime.toDate();
         const end = log.endTime.toDate();
         let duration = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
         
-        // Show warning if duration is negative
         const isInvalid = duration <= 0;
         if (isInvalid) duration = Math.abs(duration);
 
@@ -103,6 +114,16 @@ export default function SleepLogList({ logs }: Props) {
           </motion.div>
         );
       })}
+
+      {hasMore && (
+        <button
+          onClick={loadMore}
+          className="w-full py-4 glass-card hover:bg-white/5 transition-colors flex items-center justify-center gap-2 text-slate-400 hover:text-white"
+        >
+          <ChevronDown className="w-4 h-4" />
+          Load More
+        </button>
+      )}
     </div>
   );
 }

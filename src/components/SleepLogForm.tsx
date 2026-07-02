@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { sleepService } from '../services/sleepService';
 import { motion, AnimatePresence } from 'motion/react';
-import { Plus, X, Star, Clock, Calendar, Check } from 'lucide-react';
+import { Plus, X, Star, Clock, Calendar, Check, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { Timestamp } from 'firebase/firestore';
 
@@ -14,29 +14,40 @@ interface SleepLogFormProps {
 export default function SleepLogForm({ initialStartTime, initialEndTime, onClose }: SleepLogFormProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [startTime, setStartTime] = useState(
-    format(new Date(), "yyyy-MM-dd'T'22:00")
+    initialStartTime 
+      ? format(initialStartTime, "yyyy-MM-dd'T'HH:mm")
+      : format(new Date(), "yyyy-MM-dd'T'22:00")
   );
   const [endTime, setEndTime] = useState(
-    format(new Date(), "yyyy-MM-dd'T'07:00")
+    initialEndTime 
+      ? format(initialEndTime, "yyyy-MM-dd'T'HH:mm")
+      : format(new Date(), "yyyy-MM-dd'T'07:00")
   );
   const [quality, setQuality] = useState(3);
   const [notes, setNotes] = useState('');
   const [mood, setMood] = useState('Neutral');
   const [loading, setLoading] = useState(false);
-  const [hasAutoOpened, setHasAutoOpened] = useState(false);
+  
+  // New interruption states
+  const [interrupted, setInterrupted] = useState(false);
+  const [interruptionReason, setInterruptionReason] = useState('');
+  const [interruptionNotes, setInterruptionNotes] = useState('');
 
-  // Update times and open form when props change
+  // Reset form when opened with new times
   useEffect(() => {
     if (initialStartTime && initialEndTime) {
-      const startStr = format(initialStartTime, "yyyy-MM-dd'T'HH:mm");
-      const endStr = format(initialEndTime, "yyyy-MM-dd'T'HH:mm");
-      console.log('📥 Setting times from props:', { startStr, endStr });
-      setStartTime(startStr);
-      setEndTime(endStr);
       setIsOpen(true);
-      setHasAutoOpened(true);
     }
   }, [initialStartTime, initialEndTime]);
+
+  // Reset interruption fields when form opens
+  useEffect(() => {
+    if (isOpen) {
+      setInterrupted(false);
+      setInterruptionReason('');
+      setInterruptionNotes('');
+    }
+  }, [isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,7 +67,10 @@ export default function SleepLogForm({ initialStartTime, initialEndTime, onClose
         endTime: Timestamp.fromDate(end),
         quality,
         notes,
-        mood
+        mood,
+        interrupted,
+        interruptionReason: interrupted ? interruptionReason : undefined,
+        interruptionNotes: interrupted && interruptionNotes ? interruptionNotes : undefined,
       });
       setIsOpen(false);
       resetForm();
@@ -73,7 +87,9 @@ export default function SleepLogForm({ initialStartTime, initialEndTime, onClose
     setNotes('');
     setMood('Neutral');
     setQuality(3);
-    setHasAutoOpened(false);
+    setInterrupted(false);
+    setInterruptionReason('');
+    setInterruptionNotes('');
   };
 
   const handleOpen = () => {
@@ -82,9 +98,21 @@ export default function SleepLogForm({ initialStartTime, initialEndTime, onClose
 
   const handleClose = () => {
     setIsOpen(false);
-    setHasAutoOpened(false);
     if (onClose) onClose();
   };
+
+  const interruptionReasons = [
+    '🚽 Bathroom',
+    '🔊 Loud noise',
+    '👤 Someone woke me',
+    '😰 Anxiety / Stress',
+    '💭 Racing thoughts',
+    '🌡️ Too hot / too cold',
+    '🤒 Physical discomfort',
+    '📱 Phone notification',
+    '🌙 Nightmare',
+    'Other'
+  ];
 
   return (
     <div className="relative">
@@ -112,7 +140,7 @@ export default function SleepLogForm({ initialStartTime, initialEndTime, onClose
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="glass-card w-full max-w-md p-8 relative overflow-hidden backdrop-blur-xl border-white/10"
+              className="glass-card w-full max-w-md p-8 relative overflow-hidden backdrop-blur-xl border-white/10 max-h-[90vh] overflow-y-auto"
             >
               <button 
                 onClick={handleClose}
@@ -125,7 +153,7 @@ export default function SleepLogForm({ initialStartTime, initialEndTime, onClose
                 {initialStartTime && initialEndTime ? '🌅 Log Your Sleep' : 'Log Sleep'}
               </h2>
 
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-5">
                 <div className="space-y-2">
                   <label className="text-[10px] uppercase tracking-widest text-slate-500 font-bold flex items-center gap-2">
                     <Calendar className="w-3 h-3" /> Start of Sleep
@@ -173,14 +201,71 @@ export default function SleepLogForm({ initialStartTime, initialEndTime, onClose
                   <select 
                     value={mood}
                     onChange={(e) => setMood(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 outline-none focus:border-indigo-500/50 transition-colors appearance-none"
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 outline-none focus:border-indigo-500/50 transition-colors appearance-none text-white"
                   >
-                    <option value="Exhausted">Exhausted</option>
-                    <option value="Tired">Tired</option>
-                    <option value="Neutral">Neutral</option>
-                    <option value="Refreshed">Refreshed</option>
-                    <option value="Energized">Energized</option>
+                    <option value="Exhausted" className="bg-gray-800 text-white">Exhausted</option>
+                    <option value="Tired" className="bg-gray-800 text-white">Tired</option>
+                    <option value="Neutral" className="bg-gray-800 text-white">Neutral</option>
+                    <option value="Refreshed" className="bg-gray-800 text-white">Refreshed</option>
+                    <option value="Energized" className="bg-gray-800 text-white">Energized</option>
                   </select>
+                </div>
+
+                {/* Interruption Section */}
+                <div className="space-y-3 pt-2 border-t border-white/10">
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      id="interrupted"
+                      checked={interrupted}
+                      onChange={(e) => setInterrupted(e.target.checked)}
+                      className="w-5 h-5 accent-indigo-500 rounded"
+                    />
+                    <label htmlFor="interrupted" className="text-sm font-medium flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 text-orange-400" />
+                      My sleep was interrupted
+                    </label>
+                  </div>
+
+                  {interrupted && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="space-y-3 pl-6"
+                    >
+                      <div>
+                        <label className="text-[10px] uppercase tracking-widest text-slate-500 font-bold block mb-1">
+                          Reason for interruption
+                        </label>
+                        <select
+                          value={interruptionReason}
+                          onChange={(e) => setInterruptionReason(e.target.value)}
+                          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 outline-none focus:border-indigo-500/50 transition-colors text-sm text-white appearance-none"
+                        >
+                          <option value="" className="bg-gray-800 text-white">Select a reason...</option>
+                          {interruptionReasons.map((reason) => (
+                            <option key={reason} value={reason.replace(/^[^\s]+\s/, '')} className="bg-gray-800 text-white">
+                              {reason}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] uppercase tracking-widest text-slate-500 font-bold block mb-1">
+                          Additional notes (optional)
+                        </label>
+                        <input
+                          type="text"
+                          value={interruptionNotes}
+                          onChange={(e) => setInterruptionNotes(e.target.value)}
+                          placeholder="How long were you awake? Any other details?"
+                          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 outline-none focus:border-indigo-500/50 transition-colors text-sm text-white placeholder:text-slate-500"
+                        />
+                      </div>
+                    </motion.div>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -189,7 +274,7 @@ export default function SleepLogForm({ initialStartTime, initialEndTime, onClose
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     placeholder="Dreams, disruptions, etc."
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 outline-none focus:border-indigo-500/50 transition-colors min-h-[80px]"
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 outline-none focus:border-indigo-500/50 transition-colors min-h-[80px] text-white placeholder:text-slate-500"
                   />
                 </div>
 

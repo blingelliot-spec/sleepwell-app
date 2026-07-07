@@ -11,6 +11,39 @@ if (!apiKey) {
 
 const ai = new GoogleGenAI({ apiKey: apiKey || "" });
 
+// Helper for exponential backoff
+const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+async function generateWithRetry(
+  fn: () => Promise<any>,
+  retries: number = 4,
+  initialDelay: number = 1000
+): Promise<any> {
+  let lastError: any;
+  
+  for (let i = 0; i < retries; i++) {
+    try {
+      return await fn();
+    } catch (err: any) {
+      lastError = err;
+      // Check if it's a rate limit error (429) and we have retries left
+      const isRateLimit = err.message?.includes('429') || err.message?.includes('RESOURCE_EXHAUSTED');
+      
+      if (isRateLimit && i < retries - 1) {
+        const delay = initialDelay * Math.pow(2, i); // 1s, 2s, 4s...
+        console.warn(`Rate limited. Retrying in ${delay}ms... (Attempt ${i + 1}/${retries})`);
+        await wait(delay);
+        continue;
+      }
+      
+      // If not a rate limit or no retries left, throw
+      throw err;
+    }
+  }
+  
+  throw lastError;
+}
+
 export async function getSleepInsights(logs: SleepLog[]) {
   if (logs.length === 0) return "No sleep logs yet. Start tracking to get insights!";
 
@@ -48,15 +81,24 @@ export async function getSleepInsights(logs: SleepLog[]) {
 
   try {
     console.log("Calling Gemini API with model: gemini-2.0-flash");
-    const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
-      contents: prompt,
-    });
+    
+    // Use retry mechanism for rate limiting
+    const response = await generateWithRetry(async () => {
+      return await ai.models.generateContent({
+        model: "gemini-2.0-flash",
+        contents: prompt,
+      });
+    }, 4, 1000); // 4 retries, starting with 1s delay
+    
     console.log("Gemini response received successfully");
     return response.text || "No insights generated.";
   } catch (error) {
     console.error("Gemini Error:", error);
     if (error instanceof Error) {
+      // Check if it's still a quota error after retries
+      if (error.message?.includes('429') || error.message?.includes('RESOURCE_EXHAUSTED')) {
+        return "⚠️ Quota exceeded. Please try again in a few minutes or tomorrow when your free tier resets.";
+      }
       return `⚠️ Could not generate insights: ${error.message}`;
     }
     return "Could not generate insights at this time. Please try again later.";
@@ -106,14 +148,22 @@ export async function askSleepQuestion(logs: SleepLog[], question: string) {
 
   try {
     console.log("Calling Gemini API for chat question");
-    const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
-      contents: prompt,
-    });
+    
+    // Use retry mechanism for rate limiting
+    const response = await generateWithRetry(async () => {
+      return await ai.models.generateContent({
+        model: "gemini-2.0-flash",
+        contents: prompt,
+      });
+    }, 4, 1000);
+    
     return response.text || "No response generated.";
   } catch (error) {
     console.error("Chat Error:", error);
     if (error instanceof Error) {
+      if (error.message?.includes('429') || error.message?.includes('RESOURCE_EXHAUSTED')) {
+        return "⚠️ Quota exceeded. Please try again in a few minutes or tomorrow when your free tier resets.";
+      }
       return `⚠️ Could not answer: ${error.message}`;
     }
     return "Could not answer at this time. Please try again later.";

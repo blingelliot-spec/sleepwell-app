@@ -62,16 +62,24 @@ export default function SleepLogForm({ initialStartTime, initialEndTime, onClose
     
     setLoading(true);
     try {
-      await sleepService.logSleep({
+      const logData: any = {
         startTime: Timestamp.fromDate(start),
         endTime: Timestamp.fromDate(end),
         quality,
         notes,
         mood,
         interrupted,
-        interruptionReason: interrupted ? interruptionReason : undefined,
-        interruptionNotes: interrupted && interruptionNotes ? interruptionNotes : undefined,
-      });
+      };
+
+      // Only add interruption fields if interrupted is true
+      if (interrupted) {
+        logData.interruptionReason = interruptionReason || 'Other';
+        if (interruptionNotes) {
+          logData.interruptionNotes = interruptionNotes;
+        }
+      }
+
+      await sleepService.logSleep(logData);
       setIsOpen(false);
       resetForm();
       if (onClose) onClose();

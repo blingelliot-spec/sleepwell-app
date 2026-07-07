@@ -47,24 +47,32 @@ export default function SleepAnalytics({ logs, bedtimeGoal }: Props) {
   const avgWakeMinute = Math.floor(avgWakeMinutes % 60);
   const avgWakeStr = `${avgWakeHour.toString().padStart(2, '0')}:${avgWakeMinute.toString().padStart(2, '0')}`;
 
-  // Calculate deviation from goal
+  // Calculate deviation from goal (fixed - handles midnight crossing)
   let deviationText = 'Set a bedtime goal';
   let deviationColor = 'text-slate-400';
   let deviationIcon = null;
 
-  if (bedtimeGoal) {
+  if (bedtimeGoal && avgBedtimeStr) {
     const [goalHour, goalMinute] = bedtimeGoal.split(':').map(Number);
     const goalMinutes = goalHour * 60 + goalMinute;
-    const deviationMinutes = avgBedtimeMinutes - goalMinutes;
-    const deviationHrs = Math.floor(Math.abs(deviationMinutes) / 60);
-    const deviationMins = Math.abs(deviationMinutes) % 60;
+    const avgMins = avgBedtimeHour * 60 + avgBedtimeMinute;
     
-    if (deviationMinutes > 0) {
-      deviationText = `${deviationHrs > 0 ? `${deviationHrs}h ` : ''}${deviationMins}min late on average`;
+    // Calculate difference handling midnight crossing
+    let diffMinutes = avgMins - goalMinutes;
+    
+    // If difference is more than 12 hours, it means it crossed midnight
+    if (diffMinutes > 720) diffMinutes -= 1440;
+    if (diffMinutes < -720) diffMinutes += 1440;
+    
+    const diffHours = Math.floor(Math.abs(diffMinutes) / 60);
+    const diffMins = Math.abs(diffMinutes) % 60;
+    
+    if (diffMinutes > 0) {
+      deviationText = `${diffHours > 0 ? `${diffHours}h ` : ''}${diffMins}min later than goal`;
       deviationColor = 'text-orange-400';
       deviationIcon = <TrendingUp className="w-4 h-4" />;
-    } else if (deviationMinutes < 0) {
-      deviationText = `${deviationHrs > 0 ? `${deviationHrs}h ` : ''}${deviationMins}min early on average`;
+    } else if (diffMinutes < 0) {
+      deviationText = `${diffHours > 0 ? `${diffHours}h ` : ''}${diffMins}min earlier than goal`;
       deviationColor = 'text-green-400';
       deviationIcon = <TrendingDown className="w-4 h-4" />;
     } else {

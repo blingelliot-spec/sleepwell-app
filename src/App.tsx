@@ -1,22 +1,32 @@
-import MonthlyReport from './components/MonthlyReport';
-import QuickStartSleep from './components/QuickStartSleep';
-import SmartAlarm from './components/SmartAlarm';
-import BedtimeGoal from './components/BedtimeGoal';
-import SleepAnalytics from './components/SleepAnalytics';
-import DarkModeToggle from './components/DarkModeToggle';
-import PDFExport from './components/PDFExport';
-import React, { useEffect, useState } from 'react';
+import React, { lazy, Suspense, useEffect, useState } from 'react';
 import { auth } from './lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import Auth from './components/Auth';
 import SleepLogForm from './components/SleepLogForm';
-import SleepCycleChart from './components/SleepCycleChart';
-import SleepInsights from './components/SleepInsights';
-import SleepLogList from './components/SleepLogList';
 import { SleepLog } from './types';
 import { sleepService } from './services/sleepService';
-import { Moon, LogOut, LayoutDashboard, History, Settings } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { Moon, LogOut, History } from 'lucide-react';
+import { motion } from 'motion/react';
+
+// Lazy load heavy components
+const SmartAlarm = lazy(() => import('./components/SmartAlarm'));
+const BedtimeGoal = lazy(() => import('./components/BedtimeGoal'));
+const SleepAnalytics = lazy(() => import('./components/SleepAnalytics'));
+const MonthlyReport = lazy(() => import('./components/MonthlyReport'));
+const SleepInsights = lazy(() => import('./components/SleepInsights'));
+const SleepCycleChart = lazy(() => import('./components/SleepCycleChart'));
+const SleepLogList = lazy(() => import('./components/SleepLogList'));
+const QuickStartSleep = lazy(() => import('./components/QuickStartSleep'));
+const DarkModeToggle = lazy(() => import('./components/DarkModeToggle'));
+const PDFExport = lazy(() => import('./components/PDFExport'));
+
+// Loading fallback for lazy components
+const LazyLoader = () => (
+  <div className="glass-card p-6 backdrop-blur-md animate-pulse">
+    <div className="h-4 bg-white/5 rounded w-3/4 mb-2" />
+    <div className="h-3 bg-white/5 rounded w-1/2" />
+  </div>
+);
 
 // ===== DYNAMIC GREETING FUNCTION =====
 function getGreeting() {
@@ -122,8 +132,10 @@ export default function App() {
             <span className="text-[10px] uppercase tracking-widest">{user.email}</span>
           </div>
           
-          {/* Dark Mode Toggle */}
-          <DarkModeToggle />
+          {/* Dark Mode Toggle - Lazy loaded */}
+          <Suspense fallback={<div className="w-10 h-10" />}>
+            <DarkModeToggle />
+          </Suspense>
           
           <button 
             onClick={() => auth.signOut()}
@@ -160,55 +172,59 @@ export default function App() {
         <div className="grid grid-cols-12 gap-4 md:gap-6">
           {/* Main Content Area */}
           <section className="col-span-12 lg:col-span-8 space-y-4 md:space-y-6">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.2 }}
-              className="glass-card p-6 md:p-8 backdrop-blur-md"
-            >
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-slate-500 uppercase tracking-widest text-xs font-bold">Sleep History (Hours)</h3>
-                <div className="flex space-x-2">
-                  <div className="px-3 py-1 bg-white/10 rounded-full text-[10px] uppercase tracking-wider">Weekly</div>
+            <Suspense fallback={<div className="glass-card p-8 h-[400px] animate-pulse bg-white/5 rounded-3xl" />}>
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.2 }}
+                className="glass-card p-6 md:p-8 backdrop-blur-md"
+              >
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-slate-500 uppercase tracking-widest text-xs font-bold">Sleep History (Hours)</h3>
+                  <div className="flex space-x-2">
+                    <div className="px-3 py-1 bg-white/10 rounded-full text-[10px] uppercase tracking-wider">Weekly</div>
+                  </div>
                 </div>
-              </div>
-              <SleepCycleChart logs={logs} />
-            </motion.div>
+                <SleepCycleChart logs={logs} />
+              </motion.div>
+            </Suspense>
 
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-            >
-              <div className="flex items-center gap-2 mb-4">
-                <History className="w-5 h-5 text-slate-500" />
-                <h3 className="text-xl font-medium">Recent Cycles</h3>
-              </div>
-              <SleepLogList logs={logs} />
-            </motion.div>
+            <Suspense fallback={<div className="space-y-3 animate-pulse"><div className="h-20 bg-white/5 rounded-xl" /><div className="h-20 bg-white/5 rounded-xl" /></div>}>
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+              >
+                <div className="flex items-center gap-2 mb-4">
+                  <History className="w-5 h-5 text-slate-500" />
+                  <h3 className="text-xl font-medium">Recent Cycles</h3>
+                </div>
+                <SleepLogList logs={logs} />
+              </motion.div>
+            </Suspense>
           </section>
 
           {/* Sidebar Area */}
           <aside className="col-span-12 lg:col-span-4 space-y-4">
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.4 }}
-            >
+            <Suspense fallback={<LazyLoader />}>
               <SleepInsights logs={logs} />
-            </motion.div>
+            </Suspense>
 
-            {/* Quick Start Sleep */}
-            <QuickStartSleep onStartSleep={handleStartSleep} onEndSleep={handleEndSleep} />
+            <Suspense fallback={<LazyLoader />}>
+              <QuickStartSleep onStartSleep={handleStartSleep} onEndSleep={handleEndSleep} />
+            </Suspense>
 
-            {/* Bedtime Goal */}
-            <BedtimeGoal />
+            <Suspense fallback={<LazyLoader />}>
+              <BedtimeGoal />
+            </Suspense>
 
-            {/* Sleep Analytics */}
-            <SleepAnalytics logs={logs} bedtimeGoal={bedtimeGoal} />
+            <Suspense fallback={<LazyLoader />}>
+              <SleepAnalytics logs={logs} bedtimeGoal={bedtimeGoal} />
+            </Suspense>
 
-            {/* Monthly Report */}
-            <MonthlyReport logs={logs} />
+            <Suspense fallback={<LazyLoader />}>
+              <MonthlyReport logs={logs} />
+            </Suspense>
 
             <motion.div
               initial={{ opacity: 0, x: 20 }}
@@ -243,11 +259,13 @@ export default function App() {
               </div>
             </motion.div>
 
-            {/* PDF Export */}
-            <PDFExport logs={logs} />
+            <Suspense fallback={<LazyLoader />}>
+              <PDFExport logs={logs} />
+            </Suspense>
 
-            {/* Smart Alarm */}
-            <SmartAlarm />
+            <Suspense fallback={<LazyLoader />}>
+              <SmartAlarm />
+            </Suspense>
           </aside>
         </div>
       </main>

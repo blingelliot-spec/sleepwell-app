@@ -40,6 +40,16 @@ export default function SleepLogForm({ initialStartTime, initialEndTime, onClose
     }
   }, [initialStartTime, initialEndTime]);
 
+  // UPDATE TIMES WHEN QUICK START SLEEP PASSES NEW TIMES
+  useEffect(() => {
+    if (initialStartTime) {
+      setStartTime(format(initialStartTime, "yyyy-MM-dd'T'HH:mm"));
+    }
+    if (initialEndTime) {
+      setEndTime(format(initialEndTime, "yyyy-MM-dd'T'HH:mm"));
+    }
+  }, [initialStartTime, initialEndTime]);
+
   // Reset interruption fields when form opens
   useEffect(() => {
     if (isOpen) {

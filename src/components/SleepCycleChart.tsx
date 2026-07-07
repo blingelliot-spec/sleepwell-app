@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   BarChart,
   Bar,
@@ -17,17 +17,20 @@ interface Props {
 }
 
 export default function SleepCycleChart({ logs }: Props) {
-  const data = logs.slice().reverse().map(log => {
-    const start = log.startTime.toDate();
-    const end = log.endTime.toDate();
-    const duration = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
-    
-    return {
-      date: format(start, 'MMM d'),
-      hours: parseFloat(duration.toFixed(1)),
-      quality: log.quality,
-    };
-  });
+  // Use useMemo to prevent unnecessary recalculations
+  const data = useMemo(() => {
+    return logs.slice().reverse().map(log => {
+      const start = log.startTime.toDate();
+      const end = log.endTime.toDate();
+      const duration = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+      
+      return {
+        date: format(start, 'MMM d'),
+        hours: parseFloat(duration.toFixed(1)),
+        quality: log.quality,
+      };
+    });
+  }, [logs]);
 
   const getBarColor = (hours: number) => {
     if (hours < 6) return '#ef4444'; // red-500
@@ -35,10 +38,22 @@ export default function SleepCycleChart({ logs }: Props) {
     return '#6366f1'; // indigo-500
   };
 
+  // If no data, show a placeholder
+  if (data.length === 0) {
+    return (
+      <div className="h-[300px] w-full flex items-center justify-center text-slate-500">
+        No sleep data to display
+      </div>
+    );
+  }
+
   return (
-    <div className="h-[300px] w-full mt-4">
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+    <div className="h-[300px] w-full mt-4" style={{ minHeight: '200px' }}>
+      <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={200}>
+        <BarChart 
+          data={data} 
+          margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+        >
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
           <XAxis 
             dataKey="date" 
